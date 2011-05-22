@@ -14,15 +14,15 @@ object Proxy {
 		}
 		yield {
 			val	target	= Target(host, Integer.parseInt(port))
-			val noproxy	= sysProps get ("http.nonProxyHosts") map NoProxy.sun _
+			val noproxy	= sysProps get "http.nonProxyHosts" map NoProxy.sun _
 			Proxy(target, None, noproxy)
 		}
 	}
 	
 	def environmentVariable:Option[Proxy] =
 			for {
-				http_proxy	<- System.getenv("http_proxy").nullOption
-				data		= URIData.parse(http_proxy)
+				http_proxy	<- System getenv "http_proxy" guardNotNull;
+				data		= URIData parse http_proxy
 				target		<- data.target
 			} 
 			yield {

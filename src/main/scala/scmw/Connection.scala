@@ -21,7 +21,7 @@ import scjson._
 import scmw.web._
 
 final class Connection(apiURL:String) extends Logging {
-	val apiTarget		= URIData.parse(apiURL).target.getOrError("invalid api url: " + apiURL)
+	val apiTarget		= URIData.parse(apiURL).target getOrError ("invalid api url: " + apiURL)
 	val charSet			= "UTF-8"
 	val userAgent		= "scmw/0.0"
 	val cookiePolicy	= CookiePolicy.RFC_2109
@@ -41,7 +41,7 @@ final class Connection(apiURL:String) extends Logging {
 		manager.shutdown()
 	}
 	
-	def GET(params:List[Pair[String,String]]):Option[JSValue] = {
+	def GET(params:Seq[Pair[String,String]]):Option[JSValue] = {
 		//println("--- GET ---")
 		//println(params)
 		val	method	= new GetMethod(apiURL)
@@ -57,7 +57,6 @@ final class Connection(apiURL:String) extends Logging {
 			debug(method)
 			
 			require(responseCode == 200,	"unexpected response: " + statusLine)
-			//println(responseBody)
 			JSParser parse responseBody
 		}
 		finally { 
@@ -65,7 +64,7 @@ final class Connection(apiURL:String) extends Logging {
 		}
 	}
 	
-	def POST(params:List[Pair[String,String]]):Option[JSValue] = {
+	def POST(params:Seq[Pair[String,String]]):Option[JSValue] = {
 		//println("--- POST ---")
 		//println(params)
 		val method	= new PostMethod(apiURL)
@@ -79,12 +78,19 @@ final class Connection(apiURL:String) extends Logging {
 			method addParameters	(params.map{ it => new NameValuePair(it._1, it._2) }.toArray[NameValuePair])
 			
 			val responseCode	= client executeMethod method
+			/*
+			val headers	= method getResponseHeaders "Content-Type"
+			println("headers=" + (headers map { _.getValue } mkString "\t") )
+			import scutil.ext.InputStreamImplicits._
+			val bytes	= method.getResponseBodyAsStream.readFully
+			val hexdump	= new scutil.HexDump(32)
+			hexdump print bytes
+			*/
 			val responseBody	= method.getResponseBodyAsString
 			val statusLine		= method.getStatusLine
 			debug(method)
 			
 			require(responseCode == 200,	"unexpected response: " + statusLine)
-			//println(responseBody)
 			JSParser parse responseBody
 		}
 		finally { 
@@ -93,7 +99,7 @@ final class Connection(apiURL:String) extends Logging {
 	}
 	
 	/** HttpMethod factory encoding the parameters with the site charset */
-	def POST_multipart(params:List[Pair[String,String]], fileField:String, file:File, progress:Long=>Unit):Option[JSValue] = {
+	def POST_multipart(params:Seq[Pair[String,String]], fileField:String, file:File, progress:Long=>Unit):Option[JSValue] = {
 		//println("--- POST_multipart ---")
 		//println(params)
 		val method	= new PostMethod(apiURL)
@@ -110,7 +116,7 @@ final class Connection(apiURL:String) extends Logging {
 					"application/octet-stream",
 					charSet)
 			val paramParts	= params map { it => new StringPart(it._1, it._2, charSet) }
-			val parts	= (filePart :: paramParts).toArray[Part]
+			val parts		= (filePart +: paramParts).toArray[Part]
 			method setRequestEntity	new MultipartRequestEntity(parts, method.getParams)
 			
 			val responseCode	= client executeMethod method
@@ -119,7 +125,6 @@ final class Connection(apiURL:String) extends Logging {
 			debug(method)
 			
 			require(responseCode == 200,	"unexpected response: " + statusLine)
-			//println(responseBody)
 			JSParser parse responseBody
 		}
 		finally { 
@@ -183,7 +188,9 @@ final class Connection(apiURL:String) extends Logging {
 		/** this is a hack to add support for nonProxy-hosts */
 		override def getConnectionWithTimeout(hostConfiguration:HostConfiguration, timeout:Long):HttpConnection = {
 			val target		= Target(hostConfiguration.getHost, hostConfiguration.getPort)
-			val useConfig	= if (target.host != null && noproxy(target))	noProxy(hostConfiguration) else hostConfiguration
+			val useConfig	= 
+					if (target.host != null && noproxy(target))	noProxy(hostConfiguration) 
+					else										hostConfiguration
 			super.getConnectionWithTimeout(useConfig, timeout)
 		}
 		

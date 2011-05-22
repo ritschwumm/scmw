@@ -2,6 +2,7 @@ package scmw.web
 
 import java.net.URI
 
+import scutil.ext.AnyImplicits._
 import scutil.ext.AnyRefImplicits._
 
 /*
@@ -11,14 +12,14 @@ import scutil.ext.AnyRefImplicits._
 object URIData {
 	def parse(str:String):URIData = parse(new URI(str))
 	def parse(uri:URI):URIData = new URIData(
-		uri.getScheme.nullOption,
-		uri.getAuthority.nullOption,
-		uri.getPath.nullOption,
-		uri.getQuery.nullOption,
-		uri.getFragment.nullOption,
-		uri.getUserInfo.nullOption,
-		uri.getHost.nullOption,
-		uri.getPort match { case -1 => None; case x => Some(x) }
+		uri.getScheme.guardNotNull,
+		uri.getAuthority.guardNotNull,
+		uri.getPath.guardNotNull,
+		uri.getQuery.guardNotNull,
+		uri.getFragment.guardNotNull,
+		uri.getUserInfo.guardNotNull,
+		uri.getHost.guardNotNull,
+		uri.getPort guardBy { _ != -1 }
 	)
 }
 
@@ -51,6 +52,6 @@ case class URIData(
 			scheme map { _ match { 
 				case "http"		=> 80	
 				case "https"	=> 443
-				case x			=> error("unexpected scheme: " + x)
+				case x			=> sys error ("unexpected scheme: " + x)
 			} }
 }
