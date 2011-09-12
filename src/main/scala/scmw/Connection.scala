@@ -1,201 +1,132 @@
 package scmw
 
+import java.util.{ArrayList=>JList}
 import java.io.File
 import java.io.InputStream
 import java.io.FileInputStream
+import java.net.ProxySelector
+import java.nio.charset.Charset
 
-import org.apache.commons.httpclient._
-// import org.apache.commons.httpclient.util._
-import org.apache.commons.httpclient.auth._
-import org.apache.commons.httpclient.cookie._
-// import org.apache.commons.httpclient.params._
-import org.apache.commons.httpclient.methods._
-import org.apache.commons.httpclient.methods.multipart._
+import org.apache.http._
+import org.apache.http.auth._
+import org.apache.http.message._
+import org.apache.http.entity.mime._
+import org.apache.http.entity.mime.content._
+import org.apache.http.client.methods._
+import org.apache.http.client.entity._
+import org.apache.http.client.params._ 
+import org.apache.http.client.utils._ 
+import org.apache.http.impl.client._
+import org.apache.http.impl.conn._ 
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager
+import org.apache.http.util.EntityUtils
 
+import scutil.Implicits._
+import scutil.Charsets._
 import scutil.log.Logging
-import scutil.ext.AnyImplicits._
-import scutil.ext.OptionImplicits._
 
 import scjson._
 
 import scmw.web._
 
 final class Connection(apiURL:String) extends Logging {
-	val apiTarget		= URIData.parse(apiURL).target getOrError ("invalid api url: " + apiURL)
-	val charSet			= "UTF-8"
-	val userAgent		= "scmw/0.0"
-	val cookiePolicy	= CookiePolicy.RFC_2109
+	private val apiTarget	= (URIData parse apiURL).target getOrError ("invalid api url: " + apiURL)
+	private val charSet		= utf_8
+	private val userAgent	= "scmw/0.0"
 	
-	var noproxyVar:Option[Target=>Boolean]	= None
-	def noproxy	= noproxyVar getOrElse NoProxy.all _
-	val manager	= new NonProxyConnectionManager(noproxy)
-		
-	val managerParams	= manager.getParams
-	managerParams setDefaultMaxConnectionsPerHost	6
-	managerParams setMaxTotalConnections			18
-	managerParams setStaleCheckingEnabled			true
-		
-	val client	= new HttpClient(manager)
+	private val manager	= new ThreadSafeClientConnManager
+	manager setDefaultMaxPerRoute	6
+	manager setMaxTotal				18
+	 
+	private val client	= new DefaultHttpClient(manager)
+	client.getParams setParameter (ClientPNames.COOKIE_POLICY,		CookiePolicy.BROWSER_COMPATIBILITY)
+	client.getParams setParameter (ClientPNames.HANDLE_REDIRECTS,	false)
+	client.getParams setParameter (ClientPNames.DEFAULT_HEADERS,	arrayList(Seq(new BasicHeader("User-Agent", userAgent)))) 
+	client	setRoutePlanner	new ProxySelectorRoutePlanner(
+			client.getConnectionManager.getSchemeRegistry,
+			ProxySelector.getDefault)
 	
 	def dispose() {
 		manager.shutdown()
 	}
 	
-	def GET(params:Seq[Pair[String,String]]):Option[JSValue] = {
-		//println("--- GET ---")
-		//println(params)
-		val	method	= new GetMethod(apiURL)
-		try {
-			method.getParams setCookiePolicy cookiePolicy
-			method setFollowRedirects false
-			method addRequestHeader ("User-Agent", userAgent)
-			method setQueryString	(params.map{ it => new NameValuePair(it._1, it._2) }.toArray[NameValuePair])
-			
-			val responseCode	= client executeMethod method
-			val responseBody	= method.getResponseBodyAsString
-			val statusLine		= method.getStatusLine
-			debug(method)
-			
-			require(responseCode == 200,	"unexpected response: " + statusLine)
-			JSParser parse responseBody
-		}
-		finally { 
-			method.releaseConnection()
-		}
+	//------------------------------------------------------------------------------
+	
+	def GET(params:Seq[(String,String)]):Option[JSValue] = {
+		val	queryString	= URLEncodedUtils format (nameValueList(params), charSet.name)
+		val	request		= new HttpGet(apiURL + "?" + queryString)
+		handle(request)
 	}
 	
-	def POST(params:Seq[Pair[String,String]]):Option[JSValue] = {
-		//println("--- POST ---")
-		//println(params)
-		val method	= new PostMethod(apiURL)
-		try {
-			method.getParams setCookiePolicy cookiePolicy
-			method setFollowRedirects false
-			method addRequestHeader ("User-Agent", userAgent)
-		
-			// NOTE HTTPClient uses the Content-Type header in getRequestCharSet to find out which encoding the site uses
-			method addRequestHeader ("Content-Type", PostMethod.FORM_URL_ENCODED_CONTENT_TYPE + "; charset=" + charSet)
-			method addParameters	(params.map{ it => new NameValuePair(it._1, it._2) }.toArray[NameValuePair])
-			
-			val responseCode	= client executeMethod method
-			/*
-			val headers	= method getResponseHeaders "Content-Type"
-			println("headers=" + (headers map { _.getValue } mkString "\t") )
-			import scutil.ext.InputStreamImplicits._
-			val bytes	= method.getResponseBodyAsStream.readFully
-			val hexdump	= new scutil.HexDump(32)
-			hexdump print bytes
-			*/
-			val responseBody	= method.getResponseBodyAsString
-			val statusLine		= method.getStatusLine
-			debug(method)
-			
-			require(responseCode == 200,	"unexpected response: " + statusLine)
-			JSParser parse responseBody
-		}
-		finally { 
-			method.releaseConnection()
-		}
+	def POST(params:Seq[(String,String)]):Option[JSValue] = {
+		val	requestEntity	= new UrlEncodedFormEntity(nameValueList(params), charSet.name)
+		val request			= new HttpPost(apiURL)
+		request	setEntity	requestEntity
+		handle(request)
 	}
 	
-	/** HttpMethod factory encoding the parameters with the site charset */
-	def POST_multipart(params:Seq[Pair[String,String]], fileField:String, file:File, progress:Long=>Unit):Option[JSValue] = {
-		//println("--- POST_multipart ---")
-		//println(params)
-		val method	= new PostMethod(apiURL)
-		try {
-			method.getParams setCookiePolicy cookiePolicy
-			method setFollowRedirects	false
-			method addRequestHeader		("User-Agent", userAgent)
-	
-			// NOTE setting the encoding like this does not work :(
-			//method.addRequestHeader("Content-Type", MultipartPostMethod.MULTIPART_FORM_CONTENT_TYPE + "; charset=" + charSet)
-			val filePart	= new FilePart(
-					fileField, 
-					new ProgressFilePartSource(file, progress),
-					"application/octet-stream",
-					charSet)
-			val paramParts	= params map { it => new StringPart(it._1, it._2, charSet) }
-			val parts		= (filePart +: paramParts).toArray[Part]
-			method setRequestEntity	new MultipartRequestEntity(parts, method.getParams)
-			
-			val responseCode	= client executeMethod method
-			val responseBody	= method.getResponseBodyAsString
-			val statusLine		= method.getStatusLine
-			debug(method)
-			
-			require(responseCode == 200,	"unexpected response: " + statusLine)
-			JSParser parse responseBody
+	def POST_multipart(params:Seq[(String,String)], fileField:String, file:File, progress:Long=>Unit):Option[JSValue] = {
+		val requestEntity	= new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, null, null)
+		params foreach { 
+			// NOTE was Content-Transfer-Encoding: 8bit
+			case (key, value)	=> requestEntity addPart (key, new StringBody(value, "text/plain", charSet))
 		}
-		finally { 
-			method.releaseConnection()
-		}
-	}	
-	
-	/** print debug info for a HTTP-request */
-	private def debug(method:HttpMethod) {
-		DEBUG(
-				"HTTP " + method.getName + 
-				" " + method.getURI + 
-				" " + method.getStatusLine)
+		// NOTE was Content-Type: application/octet-stream; charset=UTF-8
+		// NOTE was Content-Transfer-Encoding: binary
+		requestEntity addPart (fileField, new ProgressFileBody(file, "application/octet-stream", progress))
+		val request			= new HttpPost(apiURL)
+		request	setEntity	requestEntity
+		handle(request)
 	}
 	
+	private def handle(request:HttpUriRequest):Option[JSValue] = {
+		DEBUG(request.getRequestLine)
+		val	response		= client execute request
+		DEBUG(response.getStatusLine)
+		require(
+				response.getStatusLine.getStatusCode == 200,	
+				"unexpected response: " + response.getStatusLine)
+		/*
+		val string	= response.getEntity.guardNotNull map EntityUtils.toString
+		val start	= string map { it =>
+			val limit	= 500
+			if (it.length < limit)	it
+			else					it.substring(0, limit)
+		}
+		DEBUG(start)
+		string flatMap JSParser.parse
+		*/
+		response.getEntity.guardNotNull map EntityUtils.toString flatMap JSMarshaller.unapply
+	}
+	
+	private def nameValueList(kv:Seq[(String,String)]):JList[NameValuePair]	=
+			arrayList(kv map nameValue)
+			
+	private def nameValue(kv:(String,String)):NameValuePair	=
+			new BasicNameValuePair(kv._1, kv._2)
+	
+	private def arrayList[T](elements:Seq[T]):JList[T]	=
+			new JList[T] |>> { al => elements foreach al.add }
+	
+	//------------------------------------------------------------------------------
+			
 	/** 
 	 * set credentials for a host
 	 * user and password may be null to disable 
 	 */
 	 def identify(cred:Option[Cred]) {
-		// we don't want to be asked
-		client.getParams	setAuthenticationPreemptive true
-		client.getState setCredentials (
-				new AuthScope(
-						apiTarget.host,
-						apiTarget.port,
-						AuthScope.ANY_REALM,
-						AuthScope.ANY_SCHEME), 
-				cred map clientCred _ getOrElse null)
-	}
-	
-	/** configure the proxy to be used. */
-	def proxify(proxy:Option[Proxy]) {
-		proxy match {
-			case Some(proxy)	=>
-				client.getHostConfiguration setProxy (proxy.target.host, proxy.target.port)
-				client.getState setProxyCredentials (
-						new AuthScope(
-								AuthScope.ANY_HOST,
-								AuthScope.ANY_PORT,
-								AuthScope.ANY_REALM,
-								AuthScope.ANY_SCHEME), 
-						proxy.cred map clientCred _ getOrElse null)
-				noproxyVar	= proxy.noproxy
-			case None	=>
-				client.getHostConfiguration setProxyHost null
-		}
-	}
-	
-	private def clientCred(cred:Cred):UsernamePasswordCredentials = new UsernamePasswordCredentials(cred.user, cred.password)
-	
-	/** works like a FileSource but calls a ProgressListener */
-	final class ProgressFilePartSource(file:File, callback:Long=>Unit) extends PartSource {
-		def getLength():Long	= file.length
-		def getFileName:String	= file.getName
-		def createInputStream():InputStream = new ProgressInputStream(new FileInputStream(file), callback)
-	}
-	
-	/** this is a hack to add support for nonProxy-hosts */
-	final class NonProxyConnectionManager(noproxy:Target=>Boolean) extends MultiThreadedHttpConnectionManager {
-		/** this is a hack to add support for nonProxy-hosts */
-		override def getConnectionWithTimeout(hostConfiguration:HostConfiguration, timeout:Long):HttpConnection = {
-			val target		= Target(hostConfiguration.getHost, hostConfiguration.getPort)
-			val useConfig	= 
-					if (target.host != null && noproxy(target))	noProxy(hostConfiguration) 
-					else										hostConfiguration
-			super.getConnectionWithTimeout(useConfig, timeout)
-		}
+		// TODO we don't want to be asked
+		// client.getParams	setAuthenticationPreemptive true
 		
-		private def noProxy(hostConfiguration:HostConfiguration):HostConfiguration = hostConfiguration.synchronized {
-			new HostConfiguration(hostConfiguration) doto { _ setProxyHost null }
-		}
+		client.getCredentialsProvider setCredentials (
+			new AuthScope(
+					apiTarget.host,
+					apiTarget.port,
+					AuthScope.ANY_REALM,
+					AuthScope.ANY_SCHEME),
+			cred fold (clientCred, null))
 	}
+	
+	private def clientCred(cred:Cred):UsernamePasswordCredentials = 
+			new UsernamePasswordCredentials(cred.user, cred.password)
 }

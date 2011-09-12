@@ -2,7 +2,6 @@ package scmw
 
 import java.io.File
 
-import scutil.Functions._
 import scutil.log.Logging
 import scutil.ext.OptionImplicits._
 import scutil.ext.BooleanImplicits._
@@ -14,7 +13,6 @@ import scmw.web._
 
 final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	val connection	= new Connection(apiURL)
-	connection proxify (Proxy.systemProperties orElse Proxy.environmentVariable)
 	
 	//------------------------------------------------------------------------------
 	
@@ -229,8 +227,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		)
 			
 		// NOTE either 'sessionkey', 'file', 'url'
-		def progress(bytes:Long) { callback.progress(bytes) }
-		val res2	= connection POST_multipart (req2, "file", file, progress _)
+		val res2	= connection POST_multipart (req2, "file", file, callback.progress)
 		require(res2.nonEmpty,	"no json result")
 		errorCode(res2) foreach { code => return UploadError(code) }
 		
@@ -263,6 +260,8 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		val relevantWarnings			= allWarningKeys -- ignoredWarningKeys
 		if (relevantWarnings.nonEmpty)	return UploadFailure(relevantWarnings mkString ", ")
 		
+		require(sessionkey.isDefined, "to resume after warnings, a sessionkey is required")
+		
 		val req3	= Seq(
 			"action"			-> "upload",
 			"format"			-> "json",
@@ -290,7 +289,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 				val	title	= Namespace file name
 				// NOTE api.php does not write the description page if it's not the initial upload
 				if (warningExists.isDefined) {
-					val	editResult	= edit(title, "overwritten", None, constant(Some(text)))
+					val	editResult	= edit(title, "overwritten", None, Function const Some(text))
 					editResult match {
 						case EditFailure(code) =>
 							ERROR("could not change overwritten file description (failure)", title, code)
@@ -313,7 +312,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 			
 	private def errorCode(response:Option[JSValue]):Option[String] = { 
 		val	error	= response / "error"
-		error foreach { it => ERROR(JSParser apply it) }
+		error foreach { it => ERROR(JSMarshaller apply it) }
 		error / "code" string
 	}
 			

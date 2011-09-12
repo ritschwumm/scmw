@@ -1,4 +1,4 @@
-package scmw.web
+package scmw
 
 import java.io.InputStream
 import java.io.FilterInputStream
