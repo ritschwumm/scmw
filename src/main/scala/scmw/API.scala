@@ -7,7 +7,7 @@ import scutil.ext.OptionImplicits._
 import scutil.ext.BooleanImplicits._
 
 import scjson._
-import scjson.JSNavigation._
+import scjson.JSONNavigation._
 
 import scmw.web._
 
@@ -307,12 +307,12 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	
 	//------------------------------------------------------------------------------
 	
-	private def resultCode(response:Option[JSValue]):Option[String] = 
+	private def resultCode(response:Option[JSONValue]):Option[String] = 
 			response / "result" string  
 			
-	private def errorCode(response:Option[JSValue]):Option[String] = { 
+	private def errorCode(response:Option[JSONValue]):Option[String] = { 
 		val	error	= response / "error"
-		error foreach { it => ERROR(JSMarshaller apply it) }
+		error foreach { it => ERROR(JSONMarshaller apply it) }
 		error / "code" string
 	}
 			

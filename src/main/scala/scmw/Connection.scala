@@ -52,20 +52,20 @@ final class Connection(apiURL:String) extends Logging {
 	
 	//------------------------------------------------------------------------------
 	
-	def GET(params:Seq[(String,String)]):Option[JSValue] = {
+	def GET(params:Seq[(String,String)]):Option[JSONValue] = {
 		val	queryString	= URLEncodedUtils format (nameValueList(params), charSet.name)
 		val	request		= new HttpGet(apiURL + "?" + queryString)
 		handle(request)
 	}
 	
-	def POST(params:Seq[(String,String)]):Option[JSValue] = {
+	def POST(params:Seq[(String,String)]):Option[JSONValue] = {
 		val	requestEntity	= new UrlEncodedFormEntity(nameValueList(params), charSet.name)
 		val request			= new HttpPost(apiURL)
 		request	setEntity	requestEntity
 		handle(request)
 	}
 	
-	def POST_multipart(params:Seq[(String,String)], fileField:String, file:File, progress:Long=>Unit):Option[JSValue] = {
+	def POST_multipart(params:Seq[(String,String)], fileField:String, file:File, progress:Long=>Unit):Option[JSONValue] = {
 		val requestEntity	= new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, null, null)
 		params foreach { 
 			// NOTE was Content-Transfer-Encoding: 8bit
@@ -79,7 +79,7 @@ final class Connection(apiURL:String) extends Logging {
 		handle(request)
 	}
 	
-	private def handle(request:HttpUriRequest):Option[JSValue] = {
+	private def handle(request:HttpUriRequest):Option[JSONValue] = {
 		DEBUG(request.getRequestLine)
 		val	response		= client execute request
 		DEBUG(response.getStatusLine)
@@ -96,7 +96,7 @@ final class Connection(apiURL:String) extends Logging {
 		DEBUG(start)
 		string flatMap JSParser.parse
 		*/
-		response.getEntity.guardNotNull map EntityUtils.toString flatMap JSMarshaller.unapply
+		response.getEntity.guardNotNull map EntityUtils.toString flatMap JSONMarshaller.unapply
 	}
 	
 	private def nameValueList(kv:Seq[(String,String)]):JList[NameValuePair]	=
@@ -124,7 +124,7 @@ final class Connection(apiURL:String) extends Logging {
 					apiTarget.port,
 					AuthScope.ANY_REALM,
 					AuthScope.ANY_SCHEME),
-			cred fold (clientCred, null))
+			cred map clientCred orNull)
 	}
 	
 	private def clientCred(cred:Cred):UsernamePasswordCredentials = 
