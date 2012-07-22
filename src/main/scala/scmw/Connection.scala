@@ -18,7 +18,7 @@ import org.apache.http.client.params._
 import org.apache.http.client.utils._ 
 import org.apache.http.impl.client._
 import org.apache.http.impl.conn._ 
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager
+import org.apache.http.impl.conn.PoolingClientConnectionManager
 import org.apache.http.util.EntityUtils
 
 import scutil.Implicits._
@@ -34,7 +34,7 @@ final class Connection(apiURL:String) extends Logging {
 	private val charSet		= utf_8
 	private val userAgent	= "scmw/0.0"
 	
-	private val manager	= new ThreadSafeClientConnManager
+	private val manager	= new PoolingClientConnectionManager
 	manager setDefaultMaxPerRoute	6
 	manager setMaxTotal				18
 	 

@@ -12,6 +12,15 @@ import scjson.JSONNavigation._
 import scmw.web._
 
 final class API(apiURL:String, enableWrite:Boolean) extends Logging {
+	// TODO get rid of this
+	private implicit def addOnly(value:Option[JSONValue])	= new {
+		def only:Option[JSONValue] = 
+				value collect {
+					case JSONObject(data)	=> data.headOption map { _._2 }
+					case JSONArray(data)	=> data.headOption
+				} flatMap identity
+	}
+
 	val connection	= new Connection(apiURL)
 	
 	//------------------------------------------------------------------------------
@@ -93,10 +102,10 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		require(res1.nonEmpty,	"no json result")
 		errorCode(res1) foreach { code => return EditError(code) }
 		
-		val page			= res1		/ "query" / "pages"	first
+		val page			= res1		/ "query" / "pages"	only
 		val edittoken		= page		/ "edittoken"		string
 		val starttimestamp	= page		/ "starttimestamp"	string
-		val revision		= page		/ "revisions"		first
+		val revision		= page		/ "revisions"		only
 		val basetimestamp	= revision	/ "timestamp"		string
 		//val missing			= page / "missing" isDefined
 		
@@ -150,10 +159,10 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		require(res1.nonEmpty,	"no json result")
 		errorCode(res1) foreach { code => return EditError(code) }
 		
-		val page			= res1 		/ "query" / "pages"	first
+		val page			= res1 		/ "query" / "pages"	only
 		val edittoken		= page 		/ "edittoken"		string
 		val starttimestamp	= page		/ "starttimestamp"	string
-		val revision		= page		/ "revisions"		first
+		val revision		= page		/ "revisions"		only
 		val basetimestamp	= revision	/ "timestamp"		string
 		val content			= revision	/ "*"				string
 		val missing			= page		/ "missing"			string
@@ -211,7 +220,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		require(res1.nonEmpty,	"no json result")
 		errorCode(res1) foreach { code => return UploadError(code) }
 		
-		val page			= res1 / "query" / "pages"	first
+		val page			= res1 / "query" / "pages"	only
 		val edittoken		= page / "edittoken"		string
 		
 		val req2	= Seq(
@@ -256,7 +265,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		
 		// handle other warnings
 		val ignoredWarningKeys			= Set("was-deleted", "exists",	"duplicate", "duplicate-archive", "large-file")
-		val allWarningKeys:Set[String]	= (warnings.objectMap map { _.keys map { _.value } }).toSet.flatten
+		val allWarningKeys:Set[String]	= (warnings.objectMap map { _.keys }).toSet.flatten
 		val relevantWarnings			= allWarningKeys -- ignoredWarningKeys
 		if (relevantWarnings.nonEmpty)	return UploadFailure(relevantWarnings mkString ", ")
 		
