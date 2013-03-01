@@ -1,7 +1,7 @@
 A simple wrapper around mediawiki's api.php usable to upload files and edit pages.
 
 To build this code, get and install SBT from 
-	https://github.com/harrah/xsbt
+	https://github.com/sbt/sbt
 
 Get and install these library/libraries before building:
 	https://github.com/ritschwumm/scutil
