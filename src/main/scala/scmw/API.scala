@@ -2,9 +2,8 @@ package scmw
 
 import java.io.File
 
-import scutil.log.Logging
-import scutil.ext.OptionImplicits._
-import scutil.ext.BooleanImplicits._
+import scutil.Implicits._
+import scutil.log._
 
 import scjson._
 import scjson.JSONNavigation._

@@ -23,7 +23,7 @@ import org.apache.http.util.EntityUtils
 
 import scutil.Implicits._
 import scutil.Charsets._
-import scutil.log.Logging
+import scutil.log._
 
 import scjson._
 
