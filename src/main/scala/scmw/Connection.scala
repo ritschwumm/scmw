@@ -22,7 +22,7 @@ import org.apache.http.impl.conn.PoolingClientConnectionManager
 import org.apache.http.util.EntityUtils
 
 import scutil.Implicits._
-import scutil.Charsets._
+import scutil.io.Charsets._
 import scutil.log._
 
 import scjson._
