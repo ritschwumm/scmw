@@ -26,6 +26,7 @@ import scutil.Charsets._
 import scutil.log._
 
 import scjson._
+import scjson.codec._
 
 import scmw.web._
 
@@ -96,7 +97,7 @@ final class Connection(apiURL:String) extends Logging {
 		DEBUG(start)
 		string flatMap JSParser.parse
 		*/
-		response.getEntity.guardNotNull map EntityUtils.toString flatMap JSONMarshaller.unapply
+		response.getEntity.guardNotNull map EntityUtils.toString flatMap { JSONCodec decode _ toOption }
 	}
 	
 	private def nameValueList(kv:Seq[(String,String)]):JList[NameValuePair]	=

@@ -6,6 +6,7 @@ import scutil.Implicits._
 import scutil.log._
 
 import scjson._
+import scjson.codec._
 import scjson.JSONNavigation._
 
 import scmw.web._
@@ -320,7 +321,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 			
 	private def errorCode(response:Option[JSONValue]):Option[String] = { 
 		val	error	= response / "error"
-		error foreach { it => ERROR(JSONMarshaller apply it) }
+		error foreach { it => ERROR(JSONCodec encode it) }
 		error / "code" string
 	}
 			
