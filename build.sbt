@@ -2,13 +2,13 @@ name			:= "scmw"
 
 organization	:= "de.djini"
 
-version			:= "0.20.0"
+version			:= "0.21.0"
 
 scalaVersion	:= "2.10.2"
 
 libraryDependencies	++= Seq(
-	"de.djini"					%%	"scutil"		% "0.23.0"	% "compile",
-	"de.djini"					%%	"scjson"		% "0.25.0"	% "compile",
+	"de.djini"					%%	"scutil"		% "0.24.0"	% "compile",
+	"de.djini"					%%	"scjson"		% "0.26.0"	% "compile",
 	"org.apache.httpcomponents"	%	"httpclient"	% "4.2.5"	% "compile",
 	"org.apache.httpcomponents"	%	"httpmime"		% "4.2.5"	% "compile"
 )
