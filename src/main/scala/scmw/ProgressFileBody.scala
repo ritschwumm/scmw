@@ -6,7 +6,7 @@ import org.apache.http.entity.mime.content._
 import org.apache.http.entity.mime.MIME
 
 import scutil.Implicits._
-import scutil.Resource._
+import scutil.Resources._
 
 final class ProgressFileBody(file:File, mimeType:String, progress:Long=>Unit) extends AbstractContentBody(mimeType) {
 	require(file != null, "File may not be null")
