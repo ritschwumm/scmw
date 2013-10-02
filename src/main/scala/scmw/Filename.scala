@@ -1,7 +1,5 @@
 package scmw
 
-import scutil.ext.Function1Implicits._
-
 object Filename {
 	// NOTE if this is not lazy, andThen is fed with null values
 	lazy val fix:String=>String	= 
