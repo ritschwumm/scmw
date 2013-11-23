@@ -14,7 +14,7 @@ final class ProgressFileBody(file:File, mimeType:String, progress:Long=>Unit) ex
    
 	override def writeTo(out:OutputStream) {
 		require(out != null, "Output stream may not be null")
-		getInputStream() use { _ copyTo out }
+		getInputStream() use { _ transferTo out }
 		out.flush()
 	}
 	
