@@ -3,7 +3,9 @@ package scmw
 import java.io.InputStream
 import java.io.FilterInputStream
 
-final class ProgressInputStream(inputStream:InputStream, callback:Long=>Unit) extends FilterInputStream(inputStream) {
+import scutil.lang._
+
+final class ProgressInputStream(inputStream:InputStream, callback:Effect[Long]) extends FilterInputStream(inputStream) {
 	private var doneBytes	= 0L
 
 	override def read():Int = {

@@ -22,17 +22,20 @@ object Filename {
 	//------------------------------------------------------------------------------
 	
 	/** replaces forbidden characters with '_' */
-	def normalizeTitle(title:String):String = title map { c =>
-		if (c == ' '
-			|| c < 32	|| c == 127
-			|| c == '<' || c == '>'
-			|| c == '[' || c == ']'
-			|| c == '{' || c == '}'
-			|| c == '|'
-//			|| c == ':'	|| c == '?'
-//			|| c == '/'	|| c == '\\'
-//			|| c == '+'	|| c == '%'
-		)	'_'
-		else c
-	} mkString
+	def normalizeTitle(title:String):String =
+			title
+			.map { c =>
+				if (c == ' '
+					|| c < 32	|| c == 127
+					|| c == '<' || c == '>'
+					|| c == '[' || c == ']'
+					|| c == '{' || c == '}'
+					|| c == '|'
+		//			|| c == ':'	|| c == '?'
+		//			|| c == '/'	|| c == '\\'
+		//			|| c == '+'	|| c == '%'
+				)	'_'
+				else c
+			}
+			.mkString
 }

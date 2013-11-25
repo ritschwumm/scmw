@@ -12,13 +12,15 @@ import scjson.JSONNavigation._
 import scmw.web._
 
 final class API(apiURL:String, enableWrite:Boolean) extends Logging {
-	// TODO get rid of this
-	private implicit def addOnly(value:Option[JSONValue])	= new {
+	// BETTER get rid of this
+	private implicit class AddOnly(value:Option[JSONValue])	{
 		def only:Option[JSONValue] = 
-				value collect {
+				value 
+				.collect {
 					case JSONObject(data)	=> data.headOption map { _._2 }
 					case JSONArray(data)	=> data.headOption
-				} flatMap identity
+				}
+				.flatten
 	}
 
 	val connection	= new Connection(apiURL)
@@ -28,16 +30,17 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	/** login a user with a given password */
 	def login(user:String, password:String):LoginResult = {
 		if (!enableWrite)	{
-			DEBUG("api#login", "user=", user)
+			DEBUG("api#login", user)
 			return LoginSuccess(user)
 		}
 		
-		val	req1	= Seq(
-			"action"		-> "login",
-			"format"		-> "json",
-			"lgname"		-> user,
-			"lgpassword"	-> password
-		)
+		val	req1	=
+				Seq(
+					"action"		-> "login",
+					"format"		-> "json",
+					"lgname"		-> user,
+					"lgpassword"	-> password
+				)
 		val res1	= connection POST req1
 		require(res1.nonEmpty, "no json result")
 		errorCode(res1) foreach { code => return LoginError(code) }
@@ -53,7 +56,9 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 			case None				=> sys error ("expected a result")
 		}
 		
-		val req2	= req1 ++ optionally("lgtoken" -> token)
+		val req2	= 
+				req1 ++
+				optionally("lgtoken" -> token)
 		val res2	= connection POST req2
 		require(res2.nonEmpty,	"no json result")
 		errorCode(res2) foreach { code => return LoginError(code) }
@@ -75,10 +80,11 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 			return
 		}
 		
-		val	req	= Seq(
-			"action"	-> "logout",
-			"format"	-> "json"
-		)
+		val	req	=
+				Seq(
+					"action"	-> "logout",
+					"format"	-> "json"
+				)
 		val res	= connection POST req
 		require(res.nonEmpty,	"no json result")
 	}
@@ -90,14 +96,15 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 			return EditSuccess(title)
 		}
 		
-		val	req1	= Seq(
-			"action"	-> "query",
-			"format"	-> "json",
-			"prop"		-> "info|revisions",
-			"intoken"	-> "edit",	// provides edittoken and starttimestamp
-			"rvprop"	-> "timestamp",
-			"titles"	-> title
-		)
+		val	req1	= 
+				Seq(
+					"action"	-> "query",
+					"format"	-> "json",
+					"prop"		-> "info|revisions",
+					"intoken"	-> "edit",	// provides edittoken and starttimestamp
+					"rvprop"	-> "timestamp",
+					"titles"	-> title
+				)
 		val res1			= connection POST req1
 		require(res1.nonEmpty,	"no json result")
 		errorCode(res1) foreach { code => return EditError(code) }
@@ -109,18 +116,20 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		val basetimestamp	= revision	/ "timestamp"		string
 		//val missing			= page / "missing" isDefined
 		
-		val	req2	= Seq(
-			"action"	-> "edit",
-			"format"	-> "json",
-			"title"		-> title,
-			"summary"	-> summary,
-			"text"		-> text,
-			"section"	-> "new"	// hardcoded
-		) ++ optionally(
-			"token"				-> edittoken,
-			"basetimestamp"		-> basetimestamp,
-			"starttimestamp"	-> starttimestamp
-		)
+		val	req2	=
+				Seq(
+					"action"	-> "edit",
+					"format"	-> "json",
+					"title"		-> title,
+					"summary"	-> summary,
+					"text"		-> text,
+					"section"	-> "new"	// hardcoded
+				) ++ 
+				optionally(
+					"token"				-> edittoken,
+					"basetimestamp"		-> basetimestamp,
+					"starttimestamp"	-> starttimestamp
+				)
 		val res2	= connection POST req2
 		require(res2.nonEmpty,	"no json result")
 		errorCode(res2) foreach { code => return EditError(code) }
@@ -144,17 +153,18 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		
 		val sectionString	= section map {_.toString}
 		
-		val	req1	= Seq(
-			"action"	-> "query",
-			"format"	-> "json",
-			"prop"		-> "info|revisions",
-			"intoken"	-> "edit",	// provides edittoken and starttimestamp
-			"rvprop"	-> "timestamp|content",
-			"titles"	-> title
-		) ++
-		optionally(
-			"rvsection"	-> sectionString
-		)
+		val	req1	=
+				Seq(
+					"action"	-> "query",
+					"format"	-> "json",
+					"prop"		-> "info|revisions",
+					"intoken"	-> "edit",	// provides edittoken and starttimestamp
+					"rvprop"	-> "timestamp|content",
+					"titles"	-> title
+				) ++
+				optionally(
+					"rvsection"	-> sectionString
+				)
 		val res1			= connection POST req1
 		require(res1.nonEmpty,	"no json result")
 		errorCode(res1) foreach { code => return EditError(code) }
@@ -172,18 +182,20 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		if (changed.isEmpty)	return EditAborted
 		val changed1	= changed getOrError "no text???"
 		
-		val	req2	= Seq(
-			"action"	-> "edit",
-			"format"	-> "json",
-			"title"		-> title,
-			"summary"	-> summary,
-			"text"		-> changed1
-		) ++ optionally(
-			"token"				-> edittoken,
-			"basetimestamp"		-> basetimestamp,
-			"starttimestamp"	-> starttimestamp,
-			"section"			-> sectionString
-		)
+		val	req2	=
+				Seq(
+					"action"	-> "edit",
+					"format"	-> "json",
+					"title"		-> title,
+					"summary"	-> summary,
+					"text"		-> changed1
+				) ++ 
+				optionally(
+					"token"				-> edittoken,
+					"basetimestamp"		-> basetimestamp,
+					"starttimestamp"	-> starttimestamp,
+					"section"			-> sectionString
+				)
 		val res2	= connection POST req2
 		require(res2.nonEmpty,	"no json result")
 		errorCode(res2) foreach { code => return EditError(code) }
@@ -208,13 +220,14 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		
 		val watchString	= watch guard "true"
 		
-		val	req1	= Seq(
-			"action"	-> "query",
-			"format"	-> "json",
-			"prop"		-> "info",
-			"intoken"	-> "edit",
-			"titles"	-> (Namespace file filename)
-		)
+		val	req1	=
+				Seq(
+					"action"	-> "query",
+					"format"	-> "json",
+					"prop"		-> "info",
+					"intoken"	-> "edit",
+					"titles"	-> (Namespace file filename)
+				)
 		
 		val res1			= connection POST req1
 		require(res1.nonEmpty,	"no json result")
@@ -223,17 +236,19 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		val page			= res1 / "query" / "pages"	only
 		val edittoken		= page / "edittoken"		string
 		
-		val req2	= Seq(
-			"action"	-> "upload",
-			"format"	-> "json",
-			"filename"	-> filename,
-			"comment"	-> summary,
-			"text"		-> text
-			//	ignorewarnings	url	sessionkey
-		) ++ optionally(
-			"watch"	-> watchString,	// TODO deprecated
-			"token"	-> edittoken
-		)
+		val req2	=
+				Seq(
+					"action"	-> "upload",
+					"format"	-> "json",
+					"filename"	-> filename,
+					"comment"	-> summary,
+					"text"		-> text
+					//	ignorewarnings	url	sessionkey
+				) ++
+				optionally(
+					"watch"	-> watchString,	// TODO deprecated
+					"token"	-> edittoken
+				)
 			
 		// NOTE either 'sessionkey', 'file', 'url'
 		val res2	= connection POST_multipart (req2, "file", file, callback.progress)
@@ -271,19 +286,21 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		
 		require(sessionkey.isDefined, "to resume after warnings, a sessionkey is required")
 		
-		val req3	= Seq(
-			"action"			-> "upload",
-			"format"			-> "json",
-			"filename"			-> filename,
-			"comment"			-> summary,
-			"text"				-> text,
-			"ignorewarnings"	-> "true"
-			// url
-		) ++ optionally(
-			"watch"			-> watchString,	// TODO deprecated
-			"token"			-> edittoken,	
-			"sessionkey"	-> (sessionkey map { _.toString })
-		)
+		val req3	=
+				Seq(
+					"action"			-> "upload",
+					"format"			-> "json",
+					"filename"			-> filename,
+					"comment"			-> summary,
+					"text"				-> text,
+					"ignorewarnings"	-> "true"
+					// url
+				) ++ 
+				optionally(
+					"watch"			-> watchString,	// TODO deprecated
+					"token"			-> edittoken,	
+					"sessionkey"	-> (sessionkey map { _.toString })
+				)
 		
 		val res3	= connection POST req3
 		require(res3.nonEmpty,	"no json result")
@@ -329,8 +346,9 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	private def optionally(values:Pair[String,Option[String]]*):List[Pair[String,String]] =
 			values.toList flatMap optionally1
 			
-	private def optionally1(value:Pair[String,Option[String]]):Option[Pair[String,String]] = value match {
-		case Pair(key, Some(value))	=> Some(Pair(key, value))
-		case Pair(key, None)		=> None
-	}
+	private def optionally1(value:Pair[String,Option[String]]):Option[Pair[String,String]] =
+			value match {
+				case Pair(key, Some(value))	=> Some(Pair(key, value))
+				case Pair(key, None)		=> None
+			}
 }

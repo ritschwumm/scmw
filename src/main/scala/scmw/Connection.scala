@@ -7,18 +7,26 @@ import java.io.FileInputStream
 import java.net.ProxySelector
 import java.nio.charset.Charset
 
-import org.apache.http._
-import org.apache.http.auth._
-import org.apache.http.message._
-import org.apache.http.entity.mime._
-import org.apache.http.entity.mime.content._
-import org.apache.http.client.methods._
-import org.apache.http.client.entity._
-import org.apache.http.client.params._ 
-import org.apache.http.client.utils._ 
-import org.apache.http.impl.client._
-import org.apache.http.impl.conn._ 
-import org.apache.http.impl.conn.PoolingClientConnectionManager
+import org.apache.http.HttpRequest
+import org.apache.http.HttpResponse
+import org.apache.http.HttpRequestInterceptor
+import org.apache.http.HttpException
+import org.apache.http.NameValuePair
+import org.apache.http.auth.UsernamePasswordCredentials
+import org.apache.http.message.BasicHeader
+import org.apache.http.message.BasicNameValuePair
+import org.apache.http.entity.ContentType
+import org.apache.http.entity.mime.MultipartEntityBuilder
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.client.methods.HttpUriRequest
+import org.apache.http.client.entity.UrlEncodedFormEntity
+import org.apache.http.client.utils.URLEncodedUtils
+import org.apache.http.protocol.HttpContext
+import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.impl.conn.SystemDefaultRoutePlanner
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
+import org.apache.http.impl.auth.BasicScheme
 import org.apache.http.util.EntityUtils
 
 import scutil.Implicits._
@@ -33,25 +41,53 @@ import scmw.web._
 final class Connection(apiURL:String) extends Logging {
 	private val apiTarget	= (URIData parse apiURL).target getOrError ("invalid api url: " + apiURL)
 	private val charSet		= utf_8
-	private val userAgent	= "scmw/0.0"
+	private val userAgent	= BuildInfo.name + "/" + BuildInfo.version
 	
-	private val manager	= new PoolingClientConnectionManager
+	@volatile
+	private var cred:Option[Cred]	= None
+	
+	private val manager	= new PoolingHttpClientConnectionManager
 	manager setDefaultMaxPerRoute	6
 	manager setMaxTotal				18
-	 
-	private val client	= new DefaultHttpClient(manager)
-	client.getParams setParameter (ClientPNames.COOKIE_POLICY,		CookiePolicy.BROWSER_COMPATIBILITY)
-	client.getParams setParameter (ClientPNames.HANDLE_REDIRECTS,	false)
-	client.getParams setParameter (ClientPNames.DEFAULT_HEADERS,	arrayList(Seq(new BasicHeader("User-Agent", userAgent)))) 
-	client	setRoutePlanner	new ProxySelectorRoutePlanner(
-			client.getConnectionManager.getSchemeRegistry,
+	
+	private val routePlanner	= new SystemDefaultRoutePlanner(
 			ProxySelector.getDefault)
+			
+	// NOTE new for 4.3.1
+	private object PreemptiveInterceptor extends HttpRequestInterceptor  {
+		@throws(classOf[HttpException])
+		def process(request:HttpRequest, context:HttpContext) {
+			cred foreach { cred =>
+				val credentials	= new UsernamePasswordCredentials(cred.user, cred.password)
+				val scheme		= new BasicScheme(charSet)
+				val header		= scheme authenticate (credentials, request, context)
+				request addHeader header
+			}
+		}
+	}
+	
+	private val client	=
+			HttpClientBuilder
+			.create()
+			.setConnectionManager(manager)
+			.setRoutePlanner(routePlanner)
+			.addInterceptorLast(PreemptiveInterceptor)
+			.disableRedirectHandling()
+			.setDefaultHeaders(arrayList(Seq(new BasicHeader("User-Agent", userAgent))))
+			.build()
+	// TODO check we can do without this
+	// client.getParams setParameter (ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY)
 	
 	def dispose() {
 		manager.shutdown()
 	}
 	
 	//------------------------------------------------------------------------------
+	
+	/**  set credentials to be used for authentication */
+	def identify(cred:Option[Cred]) {
+		this.cred	= cred
+	}
 	
 	def GET(params:Seq[(String,String)]):Option[JSONValue] = {
 		val	queryString	= URLEncodedUtils format (nameValueList(params), charSet.name)
@@ -67,14 +103,17 @@ final class Connection(apiURL:String) extends Logging {
 	}
 	
 	def POST_multipart(params:Seq[(String,String)], fileField:String, file:File, progress:Long=>Unit):Option[JSONValue] = {
-		val requestEntity	= new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, null, null)
-		params foreach { 
+		// val requestEntity	= new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, null, null)
+		
+		val builder	= MultipartEntityBuilder.create()
+		params foreach { case (key, value)	=> 
 			// NOTE was Content-Transfer-Encoding: 8bit
-			case (key, value)	=> requestEntity addPart (key, new StringBody(value, "text/plain", charSet))
+			builder addTextBody (key, value, ContentType.TEXT_PLAIN withCharset charSet)
 		}
-		// NOTE was Content-Type: application/octet-stream; charset=UTF-8
 		// NOTE was Content-Transfer-Encoding: binary
-		requestEntity addPart (fileField, new ProgressFileBody(file, "application/octet-stream", progress))
+		builder addPart(fileField, new ProgressFileBody(file, ContentType.APPLICATION_OCTET_STREAM, progress))
+		val requestEntity	= builder.build()
+		
 		val request			= new HttpPost(apiURL)
 		request	setEntity	requestEntity
 		handle(request)
@@ -87,16 +126,6 @@ final class Connection(apiURL:String) extends Logging {
 		require(
 				response.getStatusLine.getStatusCode == 200,	
 				"unexpected response: " + response.getStatusLine)
-		/*
-		val string	= response.getEntity.guardNotNull map EntityUtils.toString
-		val start	= string map { it =>
-			val limit	= 500
-			if (it.length < limit)	it
-			else					it.substring(0, limit)
-		}
-		DEBUG(start)
-		string flatMap JSParser.parse
-		*/
 		response.getEntity.guardNotNull map EntityUtils.toString flatMap { JSONCodec decode _ toOption }
 	}
 	
@@ -108,26 +137,4 @@ final class Connection(apiURL:String) extends Logging {
 	
 	private def arrayList[T](elements:Seq[T]):JList[T]	=
 			new JList[T] |>> { al => elements foreach al.add }
-	
-	//------------------------------------------------------------------------------
-			
-	/** 
-	 * set credentials for a host
-	 * user and password may be null to disable 
-	 */
-	 def identify(cred:Option[Cred]) {
-		// TODO we don't want to be asked
-		// client.getParams	setAuthenticationPreemptive true
-		
-		client.getCredentialsProvider setCredentials (
-			new AuthScope(
-					apiTarget.host,
-					apiTarget.port,
-					AuthScope.ANY_REALM,
-					AuthScope.ANY_SCHEME),
-			cred map clientCred orNull)
-	}
-	
-	private def clientCred(cred:Cred):UsernamePasswordCredentials = 
-			new UsernamePasswordCredentials(cred.user, cred.password)
 }

@@ -42,15 +42,17 @@ case class URIData(
 			
 	def cred:Option[Cred]	=
 			userInfo map { it =>
-				it indexOf (':') match {
+				it indexOf ':' match {
 					case -1	=> Cred(it, "")
 					case x	=> Cred(it.substring(0,x), it.substring(x+1))
 				}
 			}
 	def defaultPort:Option[Int] = 
-			scheme map { _ match { 
-				case "http"		=> 80	
-				case "https"	=> 443
-				case x			=> sys error ("unexpected scheme: " + x)
-			} }
+			scheme map {
+				_ match { 
+					case "http"		=> 80	
+					case "https"	=> 443
+					case x			=> sys error ("unexpected scheme: " + x)
+				}
+			}
 }
