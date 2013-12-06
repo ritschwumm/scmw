@@ -29,7 +29,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.impl.auth.BasicScheme
 import org.apache.http.util.EntityUtils
 
-import scutil.Implicits._
+import scutil.implicits._
 import scutil.io.Charsets._
 import scutil.log._
 

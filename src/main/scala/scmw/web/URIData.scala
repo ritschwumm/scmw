@@ -2,7 +2,7 @@ package scmw.web
 
 import java.net.URI
 
-import scutil.Implicits._
+import scutil.implicits._
 
 /*
 [scheme:][//authority][path][?query][#fragment] 

@@ -2,7 +2,7 @@ package scmw
 
 import java.io.File
 
-import scutil.Implicits._
+import scutil.implicits._
 import scutil.log._
 
 import scjson._
