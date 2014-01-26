@@ -122,11 +122,16 @@ final class Connection(apiURL:String) extends Logging {
 	private def handle(request:HttpUriRequest):Option[JSONValue] = {
 		DEBUG(request.getRequestLine)
 		val	response		= client execute request
-		DEBUG(response.getStatusLine)
-		require(
-				response.getStatusLine.getStatusCode == 200,	
-				"unexpected response: " + response.getStatusLine)
-		response.getEntity.guardNotNull map EntityUtils.toString flatMap { JSONCodec decode _ toOption }
+		try {
+			DEBUG(response.getStatusLine)
+			require(
+					response.getStatusLine.getStatusCode == 200,	
+					"unexpected response: " + response.getStatusLine)
+			response.getEntity.guardNotNull map EntityUtils.toString flatMap { JSONCodec decode _ toOption }
+		}
+		finally {
+			response.close()
+		}
 	}
 	
 	private def nameValueList(kv:Seq[(String,String)]):JList[NameValuePair]	=
