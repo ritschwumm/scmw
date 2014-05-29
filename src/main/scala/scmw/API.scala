@@ -343,12 +343,13 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	}
 			
 	/** helper function for optional request parameters */
-	private def optionally(values:Pair[String,Option[String]]*):List[Pair[String,String]] =
+	private def optionally(values:(String,Option[String])*):List[(String,String)] =
 			values.toList flatMap optionally1
 			
-	private def optionally1(value:Pair[String,Option[String]]):Option[Pair[String,String]] =
+	// NOTE this is some kind of sequence (traversable)
+	private def optionally1(value:(String,Option[String])):Option[(String,String)] =
 			value match {
-				case Pair(key, Some(value))	=> Some(Pair(key, value))
-				case Pair(key, None)		=> None
+				case (key, Some(value))	=> Some((key, value))
+				case (key, None)		=> None
 			}
 }
