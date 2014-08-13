@@ -29,6 +29,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.impl.auth.BasicScheme
 import org.apache.http.util.EntityUtils
 
+import scutil.lang.ISeq
 import scutil.implicits._
 import scutil.io.Charsets._
 import scutil.log._
@@ -73,7 +74,7 @@ final class Connection(apiURL:String) extends Logging {
 			.setRoutePlanner(routePlanner)
 			.addInterceptorLast(PreemptiveInterceptor)
 			.disableRedirectHandling()
-			.setDefaultHeaders(arrayList(Seq(new BasicHeader("User-Agent", userAgent))))
+			.setDefaultHeaders(arrayList(ISeq(new BasicHeader("User-Agent", userAgent))))
 			.build()
 	// TODO check we can do without this
 	// client.getParams setParameter (ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY)
@@ -89,20 +90,20 @@ final class Connection(apiURL:String) extends Logging {
 		this.cred	= cred
 	}
 	
-	def GET(params:Seq[(String,String)]):Option[JSONValue] = {
+	def GET(params:ISeq[(String,String)]):Option[JSONValue] = {
 		val	queryString	= URLEncodedUtils format (nameValueList(params), charSet.name)
 		val	request		= new HttpGet(apiURL + "?" + queryString)
 		handle(request)
 	}
 	
-	def POST(params:Seq[(String,String)]):Option[JSONValue] = {
+	def POST(params:ISeq[(String,String)]):Option[JSONValue] = {
 		val	requestEntity	= new UrlEncodedFormEntity(nameValueList(params), charSet.name)
 		val request			= new HttpPost(apiURL)
 		request	setEntity	requestEntity
 		handle(request)
 	}
 	
-	def POST_multipart(params:Seq[(String,String)], fileField:String, file:File, progress:Long=>Unit):Option[JSONValue] = {
+	def POST_multipart(params:ISeq[(String,String)], fileField:String, file:File, progress:Long=>Unit):Option[JSONValue] = {
 		// val requestEntity	= new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, null, null)
 		
 		val builder	= MultipartEntityBuilder.create()
@@ -134,12 +135,12 @@ final class Connection(apiURL:String) extends Logging {
 		}
 	}
 	
-	private def nameValueList(kv:Seq[(String,String)]):JList[NameValuePair]	=
+	private def nameValueList(kv:ISeq[(String,String)]):JList[NameValuePair]	=
 			arrayList(kv map nameValue)
 			
 	private def nameValue(kv:(String,String)):NameValuePair	=
 			new BasicNameValuePair(kv._1, kv._2)
 	
-	private def arrayList[T](elements:Seq[T]):JList[T]	=
+	private def arrayList[T](elements:ISeq[T]):JList[T]	=
 			new JList[T] |>> { al => elements foreach al.add }
 }

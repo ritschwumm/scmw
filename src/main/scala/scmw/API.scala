@@ -2,6 +2,7 @@ package scmw
 
 import java.io.File
 
+import scutil.lang.ISeq
 import scutil.implicits._
 import scutil.log._
 
@@ -35,7 +36,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		}
 		
 		val	req1	=
-				Seq(
+				ISeq(
 					"action"		-> "login",
 					"format"		-> "json",
 					"lgname"		-> user,
@@ -81,7 +82,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		}
 		
 		val	req	=
-				Seq(
+				ISeq(
 					"action"	-> "logout",
 					"format"	-> "json"
 				)
@@ -97,7 +98,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		}
 		
 		val	req1	= 
-				Seq(
+				ISeq(
 					"action"	-> "query",
 					"format"	-> "json",
 					"prop"		-> "info|revisions",
@@ -117,7 +118,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		//val missing			= page / "missing" isDefined
 		
 		val	req2	=
-				Seq(
+				ISeq(
 					"action"	-> "edit",
 					"format"	-> "json",
 					"title"		-> title,
@@ -154,7 +155,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		val sectionString	= section map {_.toString}
 		
 		val	req1	=
-				Seq(
+				ISeq(
 					"action"	-> "query",
 					"format"	-> "json",
 					"prop"		-> "info|revisions",
@@ -183,7 +184,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		val changed1	= changed getOrError "no text???"
 		
 		val	req2	=
-				Seq(
+				ISeq(
 					"action"	-> "edit",
 					"format"	-> "json",
 					"title"		-> title,
@@ -221,7 +222,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		val watchString	= watch guard "true"
 		
 		val	req1	=
-				Seq(
+				ISeq(
 					"action"	-> "query",
 					"format"	-> "json",
 					"prop"		-> "info",
@@ -237,7 +238,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		val edittoken		= page / "edittoken"		string
 		
 		val req2	=
-				Seq(
+				ISeq(
 					"action"	-> "upload",
 					"format"	-> "json",
 					"filename"	-> filename,
@@ -287,7 +288,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		require(sessionkey.isDefined, "to resume after warnings, a sessionkey is required")
 		
 		val req3	=
-				Seq(
+				ISeq(
 					"action"			-> "upload",
 					"format"			-> "json",
 					"filename"			-> filename,
