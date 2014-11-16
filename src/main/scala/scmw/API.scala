@@ -10,8 +10,6 @@ import scjson._
 import scjson.codec._
 import scjson.JSONNavigation._
 
-import scmw.web._
-
 final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	// BETTER get rid of this
 	private implicit class AddOnly(value:Option[JSONValue])	{
@@ -47,8 +45,8 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		errorCode(res1) foreach { code => return LoginError(code) }
 		
 		val login	= res1	/ "login"
-		val token	= login	/ "token"		string
-		val outUser	= login	/ "lgusername"	string
+		val token	= (login	/ "token").string
+		val outUser	= (login	/ "lgusername").string
 		
 		resultCode(login) match {
 			case Some("NeedToken")	=>	// handled later
@@ -65,7 +63,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		errorCode(res2) foreach { code => return LoginError(code) }
 		
 		val login2		= res2		/ "login"
-		val outUser2	= login2	/ "lgusername"	string
+		val outUser2	= (login2	/ "lgusername").string
 		
 		resultCode(login2) match {
 			case Some("Success")	=> LoginSuccess(outUser2 getOrError "expected a username")
@@ -110,12 +108,12 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		require(res1.nonEmpty,	"no json result")
 		errorCode(res1) foreach { code => return EditError(code) }
 		
-		val page			= res1		/ "query" / "pages"	only
-		val edittoken		= page		/ "edittoken"		string
-		val starttimestamp	= page		/ "starttimestamp"	string
-		val revision		= page		/ "revisions"		only
-		val basetimestamp	= revision	/ "timestamp"		string
-		//val missing			= page / "missing" isDefined
+		val page			= (res1		/ "query" / "pages").only
+		val edittoken		= (page		/ "edittoken").string
+		val starttimestamp	= (page		/ "starttimestamp").string
+		val revision		= (page		/ "revisions").only
+		val basetimestamp	= (revision	/ "timestamp").string
+		//val missing			= (page / "missing").isDefined
 		
 		val	req2	=
 				ISeq(
@@ -136,7 +134,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		errorCode(res2) foreach { code => return EditError(code) }
 		
 		val edit		= res2 / "edit"
-		val outTitle	= edit / "title" string
+		val outTitle	= (edit / "title").string
 		
 		resultCode(edit) match {
 			case Some("Success")	=> EditSuccess(outTitle getOrError "expected a title")
@@ -170,13 +168,13 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		require(res1.nonEmpty,	"no json result")
 		errorCode(res1) foreach { code => return EditError(code) }
 		
-		val page			= res1 		/ "query" / "pages"	only
-		val edittoken		= page 		/ "edittoken"		string
-		val starttimestamp	= page		/ "starttimestamp"	string
-		val revision		= page		/ "revisions"		only
-		val basetimestamp	= revision	/ "timestamp"		string
-		val content			= revision	/ "*"				string
-		val missing			= page		/ "missing"			string
+		val page			= (res1 	/ "query" / "pages").only
+		val edittoken		= (page 	/ "edittoken").string
+		val starttimestamp	= (page		/ "starttimestamp").string
+		val revision		= (page		/ "revisions").only
+		val basetimestamp	= (revision	/ "timestamp").string
+		val content			= (revision	/ "*").string
+		val missing			= (page		/ "missing").string
 		
 		val original	= content orElse (missing map { _ => "" }) 
 		val changed		= original flatMap change
@@ -203,7 +201,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		
 		// TODO handle edit conflicts
 		val edit		= res2 / "edit"
-		val outTitle	= edit / "title" string
+		val outTitle	= (edit / "title").string
 		
 		resultCode(edit) match {
 			case Some("Success")	=> EditSuccess(outTitle getOrError "expected a title")
@@ -234,8 +232,8 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		require(res1.nonEmpty,	"no json result")
 		errorCode(res1) foreach { code => return UploadError(code) }
 		
-		val page			= res1 / "query" / "pages"	only
-		val edittoken		= page / "edittoken"		string
+		val page			= (res1 / "query" / "pages").only
+		val edittoken		= (page / "edittoken").string
 		
 		val req2	=
 				ISeq(
@@ -257,8 +255,8 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		errorCode(res2) foreach { code => return UploadError(code) }
 		
 		val upload		= res2		/ "upload"
-		val outName		= upload	/ "filename"	string
-		val sessionkey	= upload	/ "sessionkey"	string	
+		val outName		= (upload	/ "filename").string
+		val sessionkey	= (upload	/ "sessionkey").string	
 		val warnings	= upload	/ "warnings"
 		
 		resultCode(upload) match {
@@ -272,10 +270,10 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		}
 		
 		// TODO handle more warnings with messages
-		val warningWasDeleted		= (warnings / "was-deleted"			string)		map UploadWarningWasDeleted.apply
-		val warningExists			= (warnings / "exists"				string)		map	UploadWarningExists.apply     
-		val warningDuplicate		= (warnings / "duplicate"			arraySeq)	map { _ flatMap { _.string } } map UploadWarningDuplicate.apply
-		val warningDuplicateArchive	= (warnings / "duplicate-archive"	string)		map UploadWarningDuplicateArchive.apply
+		val warningWasDeleted		= (warnings / "was-deleted").string			map UploadWarningWasDeleted.apply
+		val warningExists			= (warnings / "exists").string				map	UploadWarningExists.apply     
+		val warningDuplicate		= (warnings / "duplicate").arraySeq			map { _ flatMap { _.string } } map UploadWarningDuplicate.apply
+		val warningDuplicateArchive	= (warnings / "duplicate-archive").string	map UploadWarningDuplicateArchive.apply
 		val ignorableWarnings:Set[UploadWarning]	= Set(warningWasDeleted, warningExists, warningDuplicate, warningDuplicateArchive).flatten
 		if (ignorableWarnings.nonEmpty && !(callback ignore ignorableWarnings))	 return UploadAborted(ignorableWarnings)
 		
@@ -308,7 +306,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		errorCode(res3) foreach { code => return UploadError(code) }
 		
 		val upload2		= res3		/ "upload"
-		val outName2	= upload2	/ "filename" string
+		val outName2	= (upload2	/ "filename").string
 		
 		resultCode(upload2) match {
 			case Some("Success")	=> 
@@ -335,12 +333,12 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	//------------------------------------------------------------------------------
 	
 	private def resultCode(response:Option[JSONValue]):Option[String] = 
-			response / "result" string  
+			(response / "result").string  
 			
 	private def errorCode(response:Option[JSONValue]):Option[String] = { 
 		val	error	= response / "error"
 		error foreach { it => ERROR(JSONCodec encode it) }
-		error / "code" string
+		(error / "code").string
 	}
 			
 	/** helper function for optional request parameters */
