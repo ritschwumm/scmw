@@ -12,10 +12,10 @@ import scutil.implicits._
 
 final class ProgressFileBody(file:File, contentType:ContentType, progress:Effect[Long]) extends AbstractContentBody(contentType) {
 	require(file != null, "File may not be null")
- 
+
 	def getInputStream():InputStream	=
 			new ProgressInputStream(new FileInputStream(file), progress)
-   
+
 	override def writeTo(out:OutputStream) {
 		require(out != null, "Output stream may not be null")
 		getInputStream() use { _ transferTo out }

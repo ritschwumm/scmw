@@ -107,7 +107,7 @@ final class Connection(apiURL:String) extends Logging {
 		// val requestEntity	= new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, null, null)
 		
 		val builder	= MultipartEntityBuilder.create()
-		params foreach { case (key, value)	=> 
+		params foreach { case (key, value)	=>
 			// NOTE was Content-Transfer-Encoding: 8bit
 			builder addTextBody (key, value, ContentType.TEXT_PLAIN withCharset charSet)
 		}

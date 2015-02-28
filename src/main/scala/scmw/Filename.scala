@@ -2,10 +2,10 @@ package scmw
 
 object Filename {
 	// NOTE if this is not lazy, andThen is fed with null values
-	lazy val fix:String=>String	= 
-			normalizeSpace	andThen 
-			undoubleSpace	andThen 
-			trim			andThen 
+	lazy val fix:String=>String	=
+			normalizeSpace	andThen
+			undoubleSpace	andThen
+			trim			andThen
 			dashIllegal		andThen
 			ucFirst
 	

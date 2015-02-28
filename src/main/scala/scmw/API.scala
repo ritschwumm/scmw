@@ -13,8 +13,8 @@ import scjson.JSONNavigation._
 final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	// BETTER get rid of this
 	private implicit class AddOnly(value:Option[JSONValue])	{
-		def only:Option[JSONValue] = 
-				value 
+		def only:Option[JSONValue] =
+				value
 				.collect {
 					case JSONObject(data)	=> data.headOption map { _._2 }
 					case JSONArray(data)	=> data.headOption
@@ -55,7 +55,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 			case None				=> sys error ("expected a result")
 		}
 		
-		val req2	= 
+		val req2	=
 				req1 ++
 				optionally("lgtoken" -> token)
 		val res2	= connection POST req2
@@ -95,7 +95,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 			return EditSuccess(title)
 		}
 		
-		val	req1	= 
+		val	req1	=
 				ISeq(
 					"action"	-> "query",
 					"format"	-> "json",
@@ -123,7 +123,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 					"summary"	-> summary,
 					"text"		-> text,
 					"section"	-> "new"	// hardcoded
-				) ++ 
+				) ++
 				optionally(
 					"token"				-> edittoken,
 					"basetimestamp"		-> basetimestamp,
@@ -176,7 +176,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		val content			= (revision	/ "*").string
 		val missing			= (page		/ "missing").string
 		
-		val original	= content orElse (missing map { _ => "" }) 
+		val original	= content orElse (missing map { _ => "" })
 		val changed		= original flatMap change
 		if (changed.isEmpty)	return EditAborted
 		val changed1	= changed getOrError "no text???"
@@ -188,7 +188,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 					"title"		-> title,
 					"summary"	-> summary,
 					"text"		-> changed1
-				) ++ 
+				) ++
 				optionally(
 					"token"				-> edittoken,
 					"basetimestamp"		-> basetimestamp,
@@ -260,7 +260,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		val warnings	= upload	/ "warnings"
 		
 		resultCode(upload) match {
-			case Some("Success")	=> 
+			case Some("Success")	=>
 				val	name	= outName getOrError "expected filename"
 				val	title	= Namespace file name
 				return UploadSuccess(name, title)
@@ -271,7 +271,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		
 		// TODO handle more warnings with messages
 		val warningWasDeleted		= (warnings / "was-deleted").string			map UploadWarningWasDeleted.apply
-		val warningExists			= (warnings / "exists").string				map	UploadWarningExists.apply     
+		val warningExists			= (warnings / "exists").string				map	UploadWarningExists.apply
 		val warningDuplicate		= (warnings / "duplicate").arraySeq			map { _ flatMap { _.string } } map UploadWarningDuplicate.apply
 		val warningDuplicateArchive	= (warnings / "duplicate-archive").string	map UploadWarningDuplicateArchive.apply
 		val ignorableWarnings:Set[UploadWarning]	= Set(warningWasDeleted, warningExists, warningDuplicate, warningDuplicateArchive).flatten
@@ -294,7 +294,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 					"text"				-> text,
 					"ignorewarnings"	-> "true"
 					// url
-				) ++ 
+				) ++
 				optionally(
 					"watch"			-> watchString,	// TODO deprecated
 					"token"			-> edittoken,	
@@ -309,7 +309,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		val outName2	= (upload2	/ "filename").string
 		
 		resultCode(upload2) match {
-			case Some("Success")	=> 
+			case Some("Success")	=>
 				val	name	= outName2 getOrError "expected filename"
 				val	title	= Namespace file name
 				// NOTE api.php does not write the description page if it's not the initial upload
@@ -332,10 +332,10 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	
 	//------------------------------------------------------------------------------
 	
-	private def resultCode(response:Option[JSONValue]):Option[String] = 
-			(response / "result").string  
+	private def resultCode(response:Option[JSONValue]):Option[String] =
+			(response / "result").string
 			
-	private def errorCode(response:Option[JSONValue]):Option[String] = { 
+	private def errorCode(response:Option[JSONValue]):Option[String] = {
 		val	error	= response / "error"
 		error foreach { it => ERROR(JSONCodec encode it) }
 		(error / "code").string
