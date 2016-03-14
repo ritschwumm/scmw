@@ -22,7 +22,7 @@ object URIData {
 	)
 }
 
-case class URIData(
+final case class URIData(
 	scheme:Option[String],
 	authority:Option[String],
 	path:Option[String],

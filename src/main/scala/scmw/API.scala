@@ -272,14 +272,14 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		// TODO handle more warnings with messages
 		val warningWasDeleted		= (warnings / "was-deleted").string			map UploadWarningWasDeleted.apply
 		val warningExists			= (warnings / "exists").string				map	UploadWarningExists.apply
-		val warningDuplicate		= (warnings / "duplicate").arraySeq			map { _ flatMap { _.string } } map UploadWarningDuplicate.apply
+		val warningDuplicate		= (warnings / "duplicate").arraySeq			map { _ collapseMap { _.string } } map UploadWarningDuplicate.apply
 		val warningDuplicateArchive	= (warnings / "duplicate-archive").string	map UploadWarningDuplicateArchive.apply
-		val ignorableWarnings:Set[UploadWarning]	= Set(warningWasDeleted, warningExists, warningDuplicate, warningDuplicateArchive).flatten
+		val ignorableWarnings:Set[UploadWarning]	= Set(warningWasDeleted, warningExists, warningDuplicate, warningDuplicateArchive).collapse
 		if (ignorableWarnings.nonEmpty && !(callback ignore ignorableWarnings))	 return UploadAborted(ignorableWarnings)
 		
 		// handle other warnings
 		val ignoredWarningKeys			= Set("was-deleted", "exists",	"duplicate", "duplicate-archive", "large-file")
-		val allWarningKeys:Set[String]	= (warnings.objectMap map { _.keys }).toSet.flatten
+		val allWarningKeys:Set[String]	= (warnings.objectMap map { _.keys.toISeq }).toList.toSet.flatten
 		val relevantWarnings			= allWarningKeys -- ignoredWarningKeys
 		if (relevantWarnings.nonEmpty)	return UploadFailure(relevantWarnings mkString ", ")
 		
@@ -343,7 +343,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 			
 	/** helper function for optional request parameters */
 	private def optionally(values:(String,Option[String])*):List[(String,String)] =
-			values.toList flatMap optionally1
+			values.toList collapseMap optionally1
 			
 	// NOTE this is some kind of sequence (traversable)
 	private def optionally1(value:(String,Option[String])):Option[(String,String)] =
