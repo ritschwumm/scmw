@@ -2,13 +2,9 @@ package scmw
 
 import java.util.{ArrayList=>JList}
 import java.io.File
-import java.io.InputStream
-import java.io.FileInputStream
 import java.net.ProxySelector
-import java.nio.charset.Charset
 
 import org.apache.http.HttpRequest
-import org.apache.http.HttpResponse
 import org.apache.http.HttpRequestInterceptor
 import org.apache.http.HttpException
 import org.apache.http.NameValuePair

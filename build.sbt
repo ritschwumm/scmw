@@ -1,8 +1,8 @@
 name			:= "scmw"
 organization	:= "de.djini"
-version			:= "0.81.0"
+version			:= "0.82.0"
 
-scalaVersion	:= "2.11.7"
+scalaVersion	:= "2.11.8"
 scalacOptions	++= Seq(
 	"-deprecation",
 	"-unchecked",
@@ -20,10 +20,10 @@ scalacOptions	++= Seq(
 
 conflictManager	:= ConflictManager.strict
 libraryDependencies	++= Seq(
-	"de.djini"					%%	"scutil-core"	% "0.80.0"	% "compile",
-	"de.djini"					%%	"scjson"		% "0.85.0"	% "compile",
-	"org.apache.httpcomponents"	%	"httpclient"	% "4.5.1"	% "compile",
-	"org.apache.httpcomponents"	%	"httpmime"		% "4.5.1"	% "compile"
+	"de.djini"					%%	"scutil-core"	% "0.81.0"	% "compile",
+	"de.djini"					%%	"scjson"		% "0.86.0"	% "compile",
+	"org.apache.httpcomponents"	%	"httpclient"	% "4.5.2"	% "compile",
+	"org.apache.httpcomponents"	%	"httpmime"		% "4.5.2"	% "compile"
 )
 
 enablePlugins(BuildInfoPlugin)
