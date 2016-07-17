@@ -279,7 +279,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 		
 		// handle other warnings
 		val ignoredWarningKeys			= Set("was-deleted", "exists",	"duplicate", "duplicate-archive", "large-file")
-		val allWarningKeys:Set[String]	= (warnings.objectMap map { _.keys.toISeq }).toList.toSet.flatten
+		val allWarningKeys:Set[String]	= (warnings.objectMap map { _.keys.toSet }).toSet.flatten
 		val relevantWarnings			= allWarningKeys -- ignoredWarningKeys
 		if (relevantWarnings.nonEmpty)	return UploadFailure(relevantWarnings mkString ", ")
 		
