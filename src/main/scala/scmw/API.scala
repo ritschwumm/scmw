@@ -6,9 +6,9 @@ import scutil.base.implicits._
 import scutil.lang.ISeq
 import scutil.log._
 
-import scjson._
+import scjson.ast._
 import scjson.codec._
-import scjson.JSONNavigation._
+import scjson.ast.JSONNavigation._
 
 final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	// BETTER get rid of this

@@ -29,7 +29,7 @@ import scutil.base.implicits._
 import scutil.lang._
 import scutil.log._
 
-import scjson._
+import scjson.ast._
 import scjson.codec._
 
 import scmw.web._
