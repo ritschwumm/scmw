@@ -337,7 +337,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 			
 	private def errorCode(response:Option[JSONValue]):Option[String] = {
 		val	error	= response / "error"
-		error foreach { it => ERROR(JSONCodec encode it) }
+		error foreach { it => ERROR(JSONCodec encodeShort it) }
 		(error / "code").string
 	}
 			
