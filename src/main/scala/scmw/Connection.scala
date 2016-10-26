@@ -25,9 +25,8 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.impl.auth.BasicScheme
 import org.apache.http.util.EntityUtils
 
-import scutil.lang.ISeq
-import scutil.implicits._
-import scutil.codec.Charsets._
+import scutil.base.implicits._
+import scutil.lang._
 import scutil.log._
 
 import scjson._
@@ -37,7 +36,7 @@ import scmw.web._
 
 final class Connection(apiURL:String) extends Logging {
 	private val apiTarget	= (URIData parse apiURL).target getOrError ("invalid api url: " + apiURL)
-	private val charSet		= utf_8
+	private val charSet		= Charsets.utf_8
 	private val userAgent	= BuildInfo.name + "/" + BuildInfo.version
 	
 	@volatile
