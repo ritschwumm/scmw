@@ -27,7 +27,7 @@ import org.apache.http.util.EntityUtils
 
 import scutil.lang.ISeq
 import scutil.implicits._
-import scutil.io.Charsets._
+import scutil.codec.Charsets._
 import scutil.log._
 
 import scjson._
