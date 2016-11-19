@@ -1,8 +1,8 @@
 name			:= "scmw"
 organization	:= "de.djini"
-version			:= "0.95.0"
+version			:= "0.96.0"
 
-scalaVersion	:= "2.11.8"
+scalaVersion	:= "2.12.0"
 scalacOptions	++= Seq(
 	"-deprecation",
 	"-unchecked",
@@ -21,8 +21,8 @@ scalacOptions	++= Seq(
 
 conflictManager	:= ConflictManager.strict
 libraryDependencies	++= Seq(
-	"de.djini"					%%	"scutil-core"	% "0.91.0"	% "compile",
-	"de.djini"					%%	"scjson-codec"	% "0.100.0"	% "compile",
+	"de.djini"					%%	"scutil-core"	% "0.92.0"	% "compile",
+	"de.djini"					%%	"scjson-codec"	% "0.101.0"	% "compile",
 	"org.apache.httpcomponents"	%	"httpclient"	% "4.5.2"	% "compile",
 	"org.apache.httpcomponents"	%	"httpmime"		% "4.5.2"	% "compile"
 )
