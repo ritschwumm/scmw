@@ -16,7 +16,7 @@ object Filename {
 	// """[^ %!\"$&'()*,\-.\/0-9;=?@A-Z\\^_`a-z~\u0080-\u00FF+]"""
 	private val dashIllegal		= (s:String) => s replaceAll ("""[\u0000-\u001f\ufffe-\uffff:/<>\[\]\{\}]""", "-")
 	private val ucFirst			= (s:String) =>
-			if (s.length > 1)	Character.toUpperCase(s charAt 0) + (s substring 1)
+			if (s.length > 1)	Character.toUpperCase(s charAt 0).toString + (s substring 1)
 			else				s
 			
 	//------------------------------------------------------------------------------
