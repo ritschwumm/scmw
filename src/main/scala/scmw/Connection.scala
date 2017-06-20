@@ -35,7 +35,7 @@ import scjson.codec._
 import scmw.web._
 
 final class Connection(apiURL:String) extends Logging {
-	private val apiTarget	= (URIData parse apiURL).target getOrError ("invalid api url: " + apiURL)
+	//private val apiTarget	= (URIData parse apiURL).target getOrError ("invalid api url: " + apiURL)
 	private val charSet		= Charsets.utf_8
 	private val userAgent	= BuildInfo.name + "/" + BuildInfo.version
 	
