@@ -15,7 +15,7 @@ final class ProgressFileBody(file:File, contentType:ContentType, progress:Effect
 	require(file != null, "File may not be null")
 
 	def getInputStream():InputStream	=
-			new ProgressInputStream(new FileInputStream(file), progress)
+			new ProgressInputStream(file.newInputStream(), progress)
 
 	override def writeTo(out:OutputStream) {
 		require(out != null, "Output stream may not be null")
