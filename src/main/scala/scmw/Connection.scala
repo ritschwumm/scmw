@@ -123,7 +123,7 @@ final class Connection(apiURL:String) extends Logging {
 			require(
 					response.getStatusLine.getStatusCode == 200,	
 					"unexpected response: " + response.getStatusLine.toString)
-			response.getEntity.guardNotNull map EntityUtils.toString flatMap { it => (JSONCodec decode it).toOption }
+			response.getEntity.optionNotNull map EntityUtils.toString flatMap { it => (JSONCodec decode it).toOption }
 		}
 		finally {
 			response.close()

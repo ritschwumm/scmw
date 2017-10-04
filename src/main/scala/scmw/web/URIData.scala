@@ -11,14 +11,14 @@ import scutil.base.implicits._
 object URIData {
 	def parse(str:String):URIData = parse(new URI(str))
 	def parse(uri:URI):URIData = new URIData(
-		uri.getScheme.guardNotNull,
-		uri.getAuthority.guardNotNull,
-		uri.getPath.guardNotNull,
-		uri.getQuery.guardNotNull,
-		uri.getFragment.guardNotNull,
-		uri.getUserInfo.guardNotNull,
-		uri.getHost.guardNotNull,
-		uri.getPort guardBy { _ != -1 }
+		uri.getScheme.optionNotNull,
+		uri.getAuthority.optionNotNull,
+		uri.getPath.optionNotNull,
+		uri.getQuery.optionNotNull,
+		uri.getFragment.optionNotNull,
+		uri.getUserInfo.optionNotNull,
+		uri.getHost.optionNotNull,
+		uri.getPort optionBy { _ != -1 }
 	)
 }
 
