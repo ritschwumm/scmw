@@ -1,6 +1,6 @@
 name			:= "scmw"
 organization	:= "de.djini"
-version			:= "0.125.0"
+version			:= "0.125.1"
 
 scalaVersion	:= "2.12.3"
 scalacOptions	++= Seq(

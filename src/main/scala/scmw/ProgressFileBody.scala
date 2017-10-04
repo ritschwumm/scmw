@@ -19,7 +19,7 @@ final class ProgressFileBody(file:File, contentType:ContentType, progress:Effect
 
 	override def writeTo(out:OutputStream) {
 		require(out != null, "Output stream may not be null")
-		getInputStream() use { _ transferTo out }
+		getInputStream() use { _ transferToPre9 out }
 		out.flush()
 	}
 	
