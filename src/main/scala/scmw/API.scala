@@ -217,7 +217,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 			return UploadSuccess(filename, Namespace.file(filename))
 		}
 		
-		val watchString	= watch guard "true"
+		val watchString	= watch option "true"
 		
 		val	req1	=
 				ISeq(
