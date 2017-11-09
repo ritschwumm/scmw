@@ -8,16 +8,16 @@ import scutil.log._
 
 import scjson.ast._
 import scjson.codec._
-import scjson.ast.JSONNavigation._
+import scjson.ast.JsonNavigation._
 
 final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	// BETTER get rid of this
-	private implicit class AddOnly(value:Option[JSONValue])	{
-		def only:Option[JSONValue] =
+	private implicit class AddOnly(value:Option[JsonValue])	{
+		def only:Option[JsonValue] =
 				value
 				.collect {
-					case JSONObject(data)	=> data.headOption map { _._2 }
-					case JSONArray(data)	=> data.headOption
+					case JsonObject(data)	=> data.headOption map { _._2 }
+					case JsonArray(data)	=> data.headOption
 				}
 				.flatten
 	}
@@ -332,12 +332,12 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	
 	//------------------------------------------------------------------------------
 	
-	private def resultCode(response:Option[JSONValue]):Option[String] =
+	private def resultCode(response:Option[JsonValue]):Option[String] =
 			(response / "result").string
 			
-	private def errorCode(response:Option[JSONValue]):Option[String] = {
+	private def errorCode(response:Option[JsonValue]):Option[String] = {
 		val	error	= response / "error"
-		error foreach { it => ERROR(JSONCodec encodeShort it) }
+		error foreach { it => ERROR(JsonCodec encodeShort it) }
 		(error / "code").string
 	}
 			

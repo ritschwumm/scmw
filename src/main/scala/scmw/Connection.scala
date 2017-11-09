@@ -85,20 +85,20 @@ final class Connection(apiURL:String) extends Logging {
 		this.cred	= cred
 	}
 	
-	def GET(params:ISeq[(String,String)]):Option[JSONValue] = {
+	def GET(params:ISeq[(String,String)]):Option[JsonValue] = {
 		val	queryString	= URLEncodedUtils format (nameValueList(params), charSet.name)
 		val	request		= new HttpGet(apiURL + "?" + queryString)
 		handle(request)
 	}
 	
-	def POST(params:ISeq[(String,String)]):Option[JSONValue] = {
+	def POST(params:ISeq[(String,String)]):Option[JsonValue] = {
 		val	requestEntity	= new UrlEncodedFormEntity(nameValueList(params), charSet.name)
 		val request			= new HttpPost(apiURL)
 		request	setEntity	requestEntity
 		handle(request)
 	}
 	
-	def POST_multipart(params:ISeq[(String,String)], fileField:String, file:File, progress:Long=>Unit):Option[JSONValue] = {
+	def POST_multipart(params:ISeq[(String,String)], fileField:String, file:File, progress:Long=>Unit):Option[JsonValue] = {
 		// val requestEntity	= new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE, null, null)
 		
 		val builder	= MultipartEntityBuilder.create()
@@ -115,7 +115,7 @@ final class Connection(apiURL:String) extends Logging {
 		handle(request)
 	}
 	
-	private def handle(request:HttpUriRequest):Option[JSONValue] = {
+	private def handle(request:HttpUriRequest):Option[JsonValue] = {
 		DEBUG(request.getRequestLine)
 		val	response		= client execute request
 		try {
@@ -123,7 +123,7 @@ final class Connection(apiURL:String) extends Logging {
 			require(
 					response.getStatusLine.getStatusCode == 200,	
 					"unexpected response: " + response.getStatusLine.toString)
-			response.getEntity.optionNotNull map EntityUtils.toString flatMap { it => (JSONCodec decode it).toOption }
+			response.getEntity.optionNotNull map EntityUtils.toString flatMap { it => (JsonCodec decode it).toOption }
 		}
 		finally {
 			response.close()
