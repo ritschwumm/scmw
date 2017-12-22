@@ -3,6 +3,7 @@ package scmw
 import java.io.File
 
 import scutil.base.implicits._
+import scutil.core.implicits._
 import scutil.lang.ISeq
 import scutil.log._
 
@@ -213,7 +214,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	/** upload a file */
 	def upload(filename:String, summary:String, text:String, watch:Boolean, file:File, callback:UploadCallback):UploadResult = {
 		if (!enableWrite) {
-			DEBUG("api#upload", "filename=", filename, "summary=", summary, "text=", text, "watch=", watch, "file=", file.toString, "callback=", callback.toString)
+			DEBUG("api#upload", "filename=", filename, "summary=", summary, "text=", text, "watch=", watch, "file=", file, "callback=", callback.toString)
 			return UploadSuccess(filename, Namespace.file(filename))
 		}
 		
