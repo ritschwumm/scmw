@@ -116,10 +116,10 @@ final class Connection(apiURL:String) extends Logging {
 	}
 	
 	private def handle(request:HttpUriRequest):Option[JsonValue] = {
-		DEBUG(request.getRequestLine)
+		DEBUG(request.getRequestLine.toString)
 		val	response		= client execute request
 		try {
-			DEBUG(response.getStatusLine)
+			DEBUG(response.getStatusLine.toString)
 			require(
 					response.getStatusLine.getStatusCode == 200,	
 					"unexpected response: " + response.getStatusLine.toString)

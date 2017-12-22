@@ -146,7 +146,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	/** edit a page with an editor function, if it returns None editing is aborted */
 	def edit(title:String, summary:String, section:Option[Int], change:String=>Option[String]):EditResult = {
 		if (!enableWrite) {
-			DEBUG("api#edit", "title=", title, "section=", section, "summary=", summary, "change=", change)
+			DEBUG("api#edit", "title=", title, "section=", section.toString, "summary=", summary, "change=", change.toString)
 			return EditSuccess(title)
 		}
 		
@@ -213,7 +213,7 @@ final class API(apiURL:String, enableWrite:Boolean) extends Logging {
 	/** upload a file */
 	def upload(filename:String, summary:String, text:String, watch:Boolean, file:File, callback:UploadCallback):UploadResult = {
 		if (!enableWrite) {
-			DEBUG("api#upload", "filename=", filename, "summary=", summary, "text=", text, "watch=", watch, "file=", file, "callback=", callback)
+			DEBUG("api#upload", "filename=", filename, "summary=", summary, "text=", text, "watch=", watch, "file=", file.toString, "callback=", callback.toString)
 			return UploadSuccess(filename, Namespace.file(filename))
 		}
 		
